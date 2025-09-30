@@ -1,4 +1,4 @@
-import client from "../config/qdrantDbConnection.js";
+import client from "../config/qdrantConfig.js";
 
 const searchEmbedding = async (queryEmbedding, collectionName) => {
   try {

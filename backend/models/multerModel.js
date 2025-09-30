@@ -13,6 +13,11 @@ const multerSchema = mongoose.Schema({
     type: String,
     required: [true, "Name is missing"],
   },
+  section: {
+    type: String,
+    enum: ["law", "lone", "finance"],
+    required: [true, "section is missing"],
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,

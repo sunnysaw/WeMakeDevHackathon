@@ -5,7 +5,7 @@ import qdrantUploadEmbedding from "./qdrantUploadController.js";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-const generatingEmbedding = async (data, fileName) => {
+const generatingEmbedding = async(data, fileName = null) => {
   try {
     const inputText = JSON.stringify(data); // always stringify non-string data
 
@@ -32,6 +32,11 @@ const generatingEmbedding = async (data, fileName) => {
           };
         }
       }
+      return {
+        success: true,
+        statusCode: 200,
+        message: embeddings,
+      };
     } catch (error) {
       console.error("Error in Qdrant upload:", error.message);
       return {

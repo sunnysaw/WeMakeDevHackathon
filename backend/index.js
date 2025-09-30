@@ -10,6 +10,7 @@ const app = express();
 
 const mongoDbConnection = await mongoConfig();
 if (mongoDbConnection?.success) {
+  console.log(`DB Connected successfully`);
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(helemt());

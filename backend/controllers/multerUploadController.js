@@ -5,8 +5,10 @@ import getPdf from "./multerExtractController.js";
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-const uploadPdf = async (req, res) => {
+const uploadPdf = async (req, res) =>
+{
   try {
+    const { section } = req.body;
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -17,7 +19,9 @@ const uploadPdf = async (req, res) => {
     // Check if file already exists in DB
     const fileExist = await multerModel.findOne({
       name: req.file.originalname,
+      section: req.body.section, // <-- include section in search
     });
+    
     if (fileExist) {
       return res.status(400).json({
         success: false,
@@ -30,6 +34,7 @@ const uploadPdf = async (req, res) => {
       name: req.file.originalname,
       data: req.file.buffer,
       contentType: req.file.mimetype,
+      section
     });
 
     // Save to DB

@@ -1,46 +1,54 @@
-import { createRequire } from "module";
-import generatingEmbedding from "./cerebrasEmbeddingController.js";
+import generatingEmbedding from "./openAiEmbeddingController.js";
+import searchEmbedding from "./qdrantRetriveController.js";
+import generateFinalOutput from "./cerebrasCompletionController.js";
 
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
-
-const getPdf = async (file) => {
+const queryFormatting = async (req, res) => {
   try {
-    const dataBuffer = Buffer.from(file.data);
-    const data = await pdfParse(dataBuffer);
-    const fileName = file.name;
+    const { query } = req.body;
 
-    if (!data) {
-      return {
+    if (!query) {
+      return res.status(400).json({
         success: false,
         statusCode: 400,
-        message: "Failed to extract text from PDF",
-      };
+        message: "Query is required",
+      });
     }
 
-    const generatedEmbedding = await generatingEmbedding(data, fileName);
-
-    if (generatedEmbedding?.success) {
-      return {
-        success: true,
-        statusCode: 201,
-        message: "Embedding generated successfully",
-      };
+    // Step 1: Generate embedding
+    const generatedEmbedding = await generatingEmbedding(query);
+    if (!generatedEmbedding?.success) {
+      // Step 2: Search embedding in Qdrant
+      const matchEmbedding = await searchEmbedding(generatedEmbedding.message);
+      if (!matchEmbedding?.success) {
+        // Step 3: Generate final output from Cerebras
+        const finalOutput = await generateFinalOutput(
+          query,
+          matchEmbedding.message
+        );
+        if (!finalOutput?.success) {
+          return res.status(500).json({
+            success: false,
+            statusCode: 500,
+            message: finalOutput?.message || "Failed to generate final output",
+          });
+        }
+      }
     }
-
-    return {
-      success: false,
-      statusCode: generatedEmbedding?.statusCode || 500,
-      message: generatedEmbedding?.message || "Embedding generation failed",
-    };
+    // ✅ Success Response
+    return res.status(200).json({
+      success: true,
+      statusCode: 200,
+      data: finalOutput.message,
+    });
   } catch (error) {
-    console.error("Error in getPdf =>", error.message);
-    return {
+    console.error("Error in queryFormatting:", error.message);
+    return res.status(500).json({
       success: false,
       statusCode: 500,
-      message: `Error in getPdf => ${error.message}`,
-    };
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
 
-export default getPdf;
+export default queryFormatting;
